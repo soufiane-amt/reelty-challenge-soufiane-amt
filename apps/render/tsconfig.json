@@ -15,6 +15,6 @@
     "outDir": "dist",
     "rootDir": "."
   },
-  "include": ["server/**/*", "remotion/**/*"],
+  "include": ["server/**/*", "remotion/**/*", "../app/components/sortable-clip.tsx"],
   "exclude": ["node_modules", "remotion.config.ts"]
 }

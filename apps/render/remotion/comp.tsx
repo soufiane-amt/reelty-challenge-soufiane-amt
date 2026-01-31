@@ -1,19 +1,16 @@
-import { AbsoluteFill, Composition } from "remotion";
-
-const RootComposition: React.FC = () => {
-  return <AbsoluteFill />;
-};
+import { Composition } from "remotion";
+import { MyComposition, MyCompositionProps } from "./composition";
 
 export const RemotionRoot: React.FC = () => {
   return (
-    <Composition
-      id="VideoEditor"
-      component={RootComposition}
+    <Composition<MyCompositionProps, any>
+      id="MyComp"
+      component={MyComposition}
       durationInFrames={300}
       fps={30}
       width={1080}
       height={1920}
-      defaultProps={{}}
+      defaultProps={{ clips: [], texts: [] }}
     />
   );
 };
