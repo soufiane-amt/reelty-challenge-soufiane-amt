@@ -1,9 +1,11 @@
 "use client";
 
-function replaceAnimationPlaceholder(animationData: any, text: string) {
+export function replaceAnimationPlaceholder(animationData: any, text: string) {
   const jsonString = JSON.stringify(animationData);
   if (!jsonString.includes("{{content}}")) return animationData;
-  const cloned = structuredClone ? structuredClone(animationData) : JSON.parse(JSON.stringify(animationData));
+  const cloned = structuredClone
+    ? structuredClone(animationData)
+    : JSON.parse(JSON.stringify(animationData));
   const replaceInObject = (obj: any): any => {
     if (typeof obj === "string") return obj.replace(/\{\{content\}\}/g, text);
     if (Array.isArray(obj)) return obj.map(replaceInObject);
@@ -18,13 +20,12 @@ function replaceAnimationPlaceholder(animationData: any, text: string) {
 }
 
 import Lottie from "lottie-react";
-import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
 import { twMerge } from "tailwind-merge";
 import { trpc } from "@/api/client";
 import { useDebounce } from "@/hooks/use-debounce";
 import { Button } from "./ui/button";
-import { Input } from "./ui/input";
+import { RotateCcw } from "lucide-react";
 
 interface TextDockProps {
   isOpen: boolean;
@@ -44,28 +45,46 @@ const TemplateItem = ({
   isSelected,
   onSelect,
 }: {
-  template: { id: string; key: string; name: string; content?: unknown; limit?: number | null };
+  template: {
+    id: string;
+    key: string;
+    name: string;
+    content?: unknown;
+    limit?: number | null;
+  };
   debouncedText: string;
   isSelected: boolean;
   onSelect: () => void;
 }) => {
+  console.log("Rendering TemplateItem:", template);
   const animationData = useMemo(() => {
     if (!template.content) return null;
-    return replaceAnimationPlaceholder(template.content, debouncedText || "");
+    return replaceAnimationPlaceholder(
+      template.content,
+      debouncedText || "Sample",
+    );
   }, [template.content, debouncedText]);
 
   if (!template.content || !animationData) return null;
 
   return (
     <button
+      type="button"
       className={twMerge(
-        "size-[350px] flex-shrink-0 rounded-3xl border-4 p-3 duration-300",
-        isSelected ? "border-[#8E2DF6] bg-white" : "border-[#F5F5F5] bg-[#F5F5F5] hover:shadow-md"
+        "relative w-full overflow-hidden rounded-xl border-2 transition-all duration-200 aspect-video",
+        isSelected
+          ? "border-violet-500 bg-zinc-900 ring-2 ring-violet-500/20"
+          : "border-zinc-800 bg-zinc-900 hover:border-zinc-700 hover:bg-zinc-800",
       )}
       onClick={onSelect}
     >
-      <div className="flex size-full flex-col items-center justify-center overflow-hidden rounded-xl border border-[#F5F5F5] bg-[#A3A3A3]">
-        <Lottie animationData={animationData} loop={true} autoplay={true} className="h-full w-full scale-[130%] object-cover" />
+      <div className="flex size-full items-center justify-center p-4">
+        <Lottie
+          animationData={animationData}
+          loop={true}
+          autoplay={true}
+          className="h-full w-full object-contain"
+        />
       </div>
     </button>
   );
@@ -84,7 +103,9 @@ export default function TextDock({
 }: TextDockProps) {
   const debouncedTextInput = useDebounce(textInput, 300);
   const [originalTextInput, setOriginalTextInput] = useState(textInput);
-  const [originalAnimation, setOriginalAnimation] = useState(selectedTextAnimation);
+  const [originalAnimation, setOriginalAnimation] = useState(
+    selectedTextAnimation,
+  );
   const [wasOpen, setWasOpen] = useState(false);
 
   useEffect(() => {
@@ -95,83 +116,122 @@ export default function TextDock({
     setWasOpen(isOpen);
   }, [isOpen, textInput, selectedTextAnimation, wasOpen]);
 
-  const { data: templates, isLoading, error } = trpc.textTemplates.getAll.useQuery(undefined, { enabled: isOpen });
-  const hasChanges = textInput !== originalTextInput || selectedTextAnimation !== originalAnimation;
-  const characterLimit = templates?.find((t) => t.key === selectedTextAnimation)?.limit ?? null;
+  const {
+    data: templates,
+    isLoading,
+    error,
+  } = trpc.textTemplates.getAll.useQuery(undefined, { enabled: isOpen });
+  const hasChanges =
+    textInput !== originalTextInput ||
+    selectedTextAnimation !== originalAnimation;
+  const characterLimit =
+    templates?.find((t) => t.key === selectedTextAnimation)?.limit ?? null;
   const exceedsLimit = !!characterLimit && textInput.length > characterLimit;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (textInput && selectedTextAnimation && hasChanges && !exceedsLimit) onApplyText();
+    if (textInput && selectedTextAnimation && hasChanges && !exceedsLimit) {
+      onApplyText();
+      setIsOpen(false);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && textInput && selectedTextAnimation && hasChanges && !exceedsLimit) {
+    if (
+      e.key === "Enter" &&
+      textInput &&
+      selectedTextAnimation &&
+      hasChanges &&
+      !exceedsLimit
+    ) {
       e.preventDefault();
       onApplyText();
     }
   };
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <motion.div
-          initial={{ opacity: 0, y: 100 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 100 }}
-          className="absolute inset-0 z-60 flex w-full items-end px-5 pb-4"
-          onClick={() => setIsOpen(false)}
-        >
-          <div
-            className="relative w-full rounded-3xl border border-[#F6F6F6] bg-white"
-            style={{ boxShadow: "0px -6px 13px 0px #0000000A, 0px -24px 24px 0px #00000008, 0px -55px 33px 0px #00000005, 0px -97px 39px 0px #00000003, 0px -152px 42px 0px #00000000" }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <form onSubmit={handleSubmit} className="flex items-center justify-between space-x-4 rounded-t-3xl bg-[#FBFBFB] p-6">
-              <div className="relative flex w-full items-center">
-                <input
-                  type="text"
-                  placeholder="Add your text here"
-                  className="w-full rounded-[10px] border border-[#EDEDED] bg-white px-2.5 py-3 duration-300 outline-none placeholder:text-[#BFBFBF] hover:border-black focus:border-black"
-                  value={textInput}
-                  onChange={(e) => setTextInput(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  autoFocus
-                />
-                {characterLimit && (
-                  <div className="group absolute top-2.5 right-2.5 size-8">
-                    <div className={twMerge("relative flex size-full flex-col items-center justify-center rounded-full p-0.5", exceedsLimit ? "bg-red-500" : "bg-[#F0F0F0]")}>
-                      {!exceedsLimit && (
-                        <svg width={64} height={64} viewBox="-6.25 -6.25 62.5 62.5" xmlns="http://www.w3.org/2000/svg" className="absolute -rotate-90">
-                          <circle r="15" cx="25" cy="25" stroke="#141715" strokeWidth={3} strokeLinecap="round" fill="none" strokeDasharray={100} strokeDashoffset={100 - (textInput.length * 100) / characterLimit} className="transition-all duration-300" />
-                        </svg>
-                      )}
-                      <div className={twMerge("relative flex size-full items-center justify-center rounded-full bg-white text-sm", exceedsLimit ? "text-red-500" : "text-[#A3A3A3]")}>
-                        <p>{characterLimit - textInput.length}</p>
-                      </div>
-                    </div>
-                  </div>
+    <div className="flex h-full flex-col gap-6 p-6">
+      <div className="flex flex-col gap-3">
+        <h3 className="text-sm font-medium text-zinc-400 uppercase tracking-wider">
+          Content
+        </h3>
+        <div className="relative">
+          <textarea
+            placeholder="Add your text here"
+            className="w-full rounded-lg border border-zinc-800 bg-zinc-950 p-3 text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500 min-h-[100px] resize-none"
+            value={textInput}
+            onChange={(e) => setTextInput(e.target.value)}
+            autoFocus
+          />
+          {characterLimit && (
+            <div className="absolute bottom-2 right-2">
+              <span
+                className={twMerge(
+                  "text-xs font-medium",
+                  exceedsLimit ? "text-rose-500" : "text-zinc-500",
                 )}
-              </div>
-              <div className="flex items-center gap-3">
-                {hasAppliedText && <Button variant="secondary" type="button" onClick={onReset}>Reset</Button>}
-                <Button type="submit" disabled={!textInput || !selectedTextAnimation || !hasChanges || exceedsLimit}>Apply Changes</Button>
-              </div>
-            </form>
-            <div className="scrollbar scrollbar-h-1.5 scrollbar-thumb-[#E9E9E9] scrollbar-thumb-rounded-full scrollbar-hover:scrollbar-thumb-black mb-2.5 w-full overflow-x-auto p-8 pt-6">
-              {isLoading && <div className="flex items-center justify-center p-4"><div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-black" /></div>}
-              {error && <div className="flex items-center justify-center p-4 text-red-500"><p>Failed to load text animations. Please try again.</p></div>}
-              {templates && (
-                <div className="flex gap-4">
-                  {templates.map((template) => (
-                    <TemplateItem key={template.key} template={template} debouncedText={debouncedTextInput} isSelected={selectedTextAnimation === template.key} onSelect={() => setSelectedTextAnimation(template.key)} />
-                  ))}
-                </div>
-              )}
+              >
+                {textInput.length} / {characterLimit}
+              </span>
             </div>
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+          )}
+        </div>
+        <div className="flex gap-2">
+          <Button
+            onClick={handleSubmit}
+            disabled={
+              !textInput ||
+              !selectedTextAnimation ||
+              !hasChanges ||
+              exceedsLimit
+            }
+            className="flex-1 bg-violet-600 hover:bg-violet-700 text-white"
+          >
+            {hasAppliedText ? "Update Text" : "Add Text"}
+          </Button>
+          {hasAppliedText && (
+            <Button
+              variant="secondary"
+              type="button"
+              onClick={onReset}
+              className="px-3"
+            >
+              <RotateCcw size={16} />
+            </Button>
+          )}
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-3 flex-1 min-h-0">
+        <h3 className="text-sm font-medium text-zinc-400 uppercase tracking-wider">
+          Style
+        </h3>
+        <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent">
+          {isLoading && (
+            <div className="flex items-center justify-center p-4">
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-zinc-700 border-t-violet-500" />
+            </div>
+          )}
+          {error && (
+            <div className="flex items-center justify-center p-4 text-rose-500 text-sm text-center">
+              <p>Failed to load animations.</p>
+            </div>
+          )}
+          {templates && (
+            <div className="grid grid-cols-1 gap-4 pb-4">
+              {templates.map((template) => (
+                <TemplateItem
+                  key={template.key}
+                  template={template}
+                  debouncedText={debouncedTextInput}
+                  isSelected={selectedTextAnimation === template.key}
+                  onSelect={() => setSelectedTextAnimation(template.key)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }

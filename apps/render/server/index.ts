@@ -31,7 +31,7 @@ app.get("/progress/:id", (req, res) => {
 
 app.post("/render", async (req, res) => {
   try {
-    const { clips, texts, ratio } = req.body;
+    const { clips, texts, ratio, templates } = req.body;
 
     if (texts && Array.isArray(texts)) {
       for (let i = 0; i < texts.length; i++) {
@@ -88,7 +88,7 @@ app.post("/render", async (req, res) => {
         await renderMedia({
           composition: {
             id: compositionId,
-            props: { clips: processedClips, texts },
+            props: { clips: processedClips, texts, templates },
             width: ratio === "landscape" ? 1920 : 1080,
             height: ratio === "landscape" ? 1080 : 1920,
             fps: 30,

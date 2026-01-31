@@ -1,15 +1,26 @@
 "use client";
 
 import { getConstrainedHeight, doIntervalsOverlap } from "@/data/constants";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import { usePinchZoom } from "@/hooks/use-pinch-zoom";
 import { SAMPLE_VIDEOS } from "@/data/sample-videos";
 import VideoClipCard from "./video-clip-card";
 import { twMerge } from "tailwind-merge";
 import { Button } from "./ui/button";
 import Magnifier from "./magnifier";
-import { Plus, Type, Play, Video as VideoIcon, Layers } from "lucide-react";
+import {
+  Plus,
+  Type,
+  Play,
+  Video as VideoIcon,
+  Layers,
+  Upload,
+  Link as LinkIcon,
+  FileVideo,
+  Save,
+} from "lucide-react";
 import TextDock from "./text-dock";
+
 import {
   DndContext,
   DragEndEvent,
@@ -27,6 +38,10 @@ import {
 import { SortableClip } from "./sortable-clip";
 import { TimelineRuler } from "./timeline-ruler";
 import Toast from "./ui/Toast";
+import { Input } from "./ui/input";
+import { trpc } from "@/api/client";
+import Lottie from "lottie-react";
+import { replaceAnimationPlaceholder } from "./text-dock";
 
 interface TextTrack {
   id: string;
@@ -36,14 +51,70 @@ interface TextTrack {
   duration: number;
 }
 
+const getVideoDuration = (url: string): Promise<number> => {
+  return new Promise((resolve, reject) => {
+    const video = document.createElement("video");
+    video.preload = "metadata";
+    video.onloadedmetadata = () => {
+      resolve(video.duration);
+    };
+    video.onerror = () => {
+      reject("Invalid video");
+    };
+    video.src = url;
+  });
+};
+
+const TextOverlay = ({
+  text,
+  template,
+  ratio,
+}: {
+  text: TextTrack;
+  template: any;
+  ratio: "portrait" | "landscape";
+}) => {
+  const animationData = useMemo(() => {
+    return template?.content
+      ? replaceAnimationPlaceholder(template.content, text.content)
+      : null;
+  }, [template, text.content]);
+
+  return (
+    <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+      {animationData ? (
+        <div className="h-full w-full">
+          <Lottie
+            animationData={animationData}
+            loop={true}
+            className="h-full w-full"
+          />
+        </div>
+      ) : (
+        <div
+          className="text-center font-sans font-bold text-white drop-shadow-lg"
+          style={{
+            fontSize: ratio === "landscape" ? "4vw" : "3rem",
+            textShadow: "0 2px 10px rgba(0,0,0,0.8)",
+          }}
+        >
+          {text.content}
+        </div>
+      )}
+    </div>
+  );
+};
+
 function PreviewPlayer({
   clips,
   textTracks,
   ratio,
+  templates,
 }: {
   clips: typeof SAMPLE_VIDEOS;
   textTracks: TextTrack[];
   ratio: "portrait" | "landscape";
+  templates?: any[];
 }) {
   const [activeClipIndex, setActiveClipIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -126,20 +197,12 @@ function PreviewPlayer({
         playsInline
       />
       {activeTexts.map((text) => (
-        <div
+        <TextOverlay
           key={text.id}
-          className="pointer-events-none absolute inset-0 flex items-center justify-center"
-        >
-          <div
-            className="text-center font-sans font-bold text-white drop-shadow-lg"
-            style={{
-              fontSize: ratio === "landscape" ? "4vw" : "3rem",
-              textShadow: "0 2px 10px rgba(0,0,0,0.8)",
-            }}
-          >
-            {text.content}
-          </div>
-        </div>
+          text={text}
+          template={templates?.find((t) => t.key === text.animation)}
+          ratio={ratio}
+        />
       ))}
       {isBuffering && (
         <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/20 backdrop-blur-sm">
@@ -187,7 +250,10 @@ export default function tchVideoEditor() {
     string | null
   >(null);
   const [isTextOpen, setIsTextOpen] = useState(false);
+  const [sidebarTab, setSidebarTab] = useState<"media" | "text">("media");
+  const [importUrl, setImportUrl] = useState("");
   const [toast, setToast] = useState<string | null>(null);
+  const { data: templates } = trpc.textTemplates.getAll.useQuery();
 
   useEffect(() => {
     if (toast) {
@@ -195,6 +261,12 @@ export default function tchVideoEditor() {
       return () => clearTimeout(timer);
     }
   }, [toast]);
+
+  useEffect(() => {
+    if (isTextOpen) {
+      setSidebarTab("text");
+    }
+  }, [isTextOpen]);
 
   const [activeClips, setActiveClips] = useState(SAMPLE_VIDEOS);
   const [removedClips, setRemovedClips] = useState<typeof SAMPLE_VIDEOS>([]);
@@ -311,6 +383,7 @@ export default function tchVideoEditor() {
       setEditingTrackId(id);
       setTextInput(track.content);
       setSelectedTextAnimation(track.animation);
+      setSidebarTab("text");
       setIsTextOpen(true);
     }
   };
@@ -319,7 +392,49 @@ export default function tchVideoEditor() {
     setEditingTrackId(null);
     setTextInput("");
     setSelectedTextAnimation(null);
+    setSidebarTab("text");
     setIsTextOpen(true);
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const url = URL.createObjectURL(file);
+      const duration = await getVideoDuration(url);
+      const newClip = {
+        id: crypto.randomUUID(),
+        url,
+        thumbnail: "",
+        duration,
+      };
+      setActiveClips((prev) => [...prev, newClip]);
+      setToast("Video uploaded successfully");
+    } catch (error) {
+      console.error(error);
+      setToast("Failed to upload video");
+    }
+    // Reset input
+    e.target.value = "";
+  };
+
+  const handleUrlImport = async () => {
+    if (!importUrl) return;
+    try {
+      const duration = await getVideoDuration(importUrl);
+      const newClip = {
+        id: crypto.randomUUID(),
+        url: importUrl,
+        thumbnail: "",
+        duration,
+      };
+      setActiveClips((prev) => [...prev, newClip]);
+      setToast("Video imported successfully");
+      setImportUrl("");
+    } catch (error) {
+      setToast("Failed to import video. Check URL.");
+    }
   };
 
   const sensors = useSensors(
@@ -423,6 +538,7 @@ export default function tchVideoEditor() {
           ratio={ratio}
           textTracks={textTracks}
           setToast={setToast}
+          templates={templates}
           className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 border-0 shadow-lg shadow-violet-500/20"
         />
       </header>
@@ -431,17 +547,87 @@ export default function tchVideoEditor() {
       <div className="flex flex-1 overflow-hidden">
         {/* Left Sidebar - Asset Library / Text Options */}
         <aside className="w-80 shrink-0 border-r border-zinc-800 bg-zinc-900/50 flex flex-col z-40">
-          <TextDock
-            isOpen={isTextOpen}
-            setIsOpen={setIsTextOpen}
-            textInput={textInput}
-            setTextInput={setTextInput}
-            selectedTextAnimation={selectedTextAnimation}
-            setSelectedTextAnimation={setSelectedTextAnimation}
-            onApplyText={handleApplyText}
-            onReset={handleDeleteText}
-            hasAppliedText={!!editingTrackId}
-          />
+          <div className="flex border-b border-zinc-800">
+            <button
+              onClick={() => setSidebarTab("media")}
+              className={twMerge(
+                "flex-1 py-3 text-sm font-medium transition-colors",
+                sidebarTab === "media"
+                  ? "border-b-2 border-violet-500 text-violet-500"
+                  : "text-zinc-400 hover:text-zinc-200",
+              )}
+            >
+              Media
+            </button>
+            <button
+              onClick={() => setSidebarTab("text")}
+              className={twMerge(
+                "flex-1 py-3 text-sm font-medium transition-colors",
+                sidebarTab === "text"
+                  ? "border-b-2 border-violet-500 text-violet-500"
+                  : "text-zinc-400 hover:text-zinc-200",
+              )}
+            >
+              Text
+            </button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto">
+            {sidebarTab === "media" && (
+              <div className="p-6 space-y-6">
+                <div className="space-y-4">
+                  <h3 className="text-sm font-medium text-zinc-400 uppercase tracking-wider">
+                    Import Media
+                  </h3>
+                  <div className="grid gap-4">
+                    <Button
+                      variant="outline"
+                      className="h-24 w-full flex-col gap-2 border-dashed border-zinc-700 hover:border-violet-500 hover:bg-violet-500/5"
+                      onClick={() =>
+                        document.getElementById("video-upload")?.click()
+                      }
+                    >
+                      <Upload size={24} className="text-zinc-400" />
+                      <span className="text-zinc-400">Upload from Device</span>
+                    </Button>
+                    <input
+                      id="video-upload"
+                      type="file"
+                      accept="video/*"
+                      className="hidden"
+                      onChange={handleFileUpload}
+                    />
+
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Paste video URL..."
+                        value={importUrl}
+                        onChange={(e) => setImportUrl(e.target.value)}
+                        className="bg-zinc-950"
+                      />
+                      <Button size="icon" onClick={handleUrlImport}>
+                        <LinkIcon size={16} />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {sidebarTab === "text" && (
+              <TextDock
+                isOpen={true}
+                setIsOpen={setIsTextOpen}
+                textInput={textInput}
+                setTextInput={setTextInput}
+                selectedTextAnimation={selectedTextAnimation}
+                setSelectedTextAnimation={setSelectedTextAnimation}
+                onApplyText={handleApplyText}
+                onReset={handleDeleteText}
+                hasAppliedText={!!editingTrackId}
+              />
+            )}
+          </div>
         </aside>
 
         {/* Center & Bottom Area */}
@@ -452,6 +638,7 @@ export default function tchVideoEditor() {
               clips={activeClips}
               textTracks={textTracks}
               ratio={ratio}
+              templates={templates}
             />
           </main>
 
@@ -617,17 +804,22 @@ function RenderButton({
   textTracks,
   className,
   setToast,
+  templates,
 }: {
   clips: typeof SAMPLE_VIDEOS;
   ratio: "portrait" | "landscape";
   textTracks: TextTrack[];
   className?: string;
   setToast: React.Dispatch<React.SetStateAction<string | null>>;
+  templates?: any[];
 }) {
   const [isRendering, setIsRendering] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [fileName, setFileName] = useState("my-video");
 
   const handleRender = async () => {
+    setShowSaveModal(false);
     setIsRendering(true);
     setProgress(0);
     try {
@@ -642,8 +834,10 @@ function RenderButton({
             content: t.content,
             start: t.startPosition,
             duration: t.duration,
+            animation: t.animation,
           })),
           ratio,
+          templates,
         }),
       });
 
@@ -663,8 +857,18 @@ function RenderButton({
 
         if (status.status === "done") {
           setProgress(100);
-          setToast("Render complete! Opening video...");
-          window.open(status.url, "_blank");
+          setToast("Render complete! Downloading...");
+
+          const response = await fetch(status.url);
+          const blob = await response.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `${fileName}.mp4`;
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(a);
           break;
         } else if (status.status === "error") {
           throw new Error(status.error || "Render failed");
@@ -686,7 +890,7 @@ function RenderButton({
   return (
     <div className="flex items-center">
       <Button
-        onClick={handleRender}
+        onClick={() => setShowSaveModal(true)}
         disabled={isRendering || clips.length === 0}
         className={twMerge(
           "relative min-w-[140px] overflow-hidden",
@@ -706,9 +910,53 @@ function RenderButton({
             {progress}%
           </span>
         ) : (
-          "Render Video"
+          <>
+            <Save size={16} className="mr-2" />
+            Save
+          </>
         )}
       </Button>
+
+      {showSaveModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-md rounded-xl border border-zinc-800 bg-zinc-950 p-6 shadow-2xl animate-in zoom-in-95 slide-in-from-bottom-2">
+            <h3 className="mb-4 text-lg font-medium text-zinc-100">
+              Save Video
+            </h3>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm text-zinc-400">
+                  Destination Filename
+                </label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={fileName}
+                    onChange={(e) => setFileName(e.target.value)}
+                    placeholder="Enter filename"
+                    autoFocus
+                    className="flex-1"
+                  />
+                  <span className="text-sm text-zinc-500">.mp4</span>
+                </div>
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <Button
+                  variant="secondary"
+                  onClick={() => setShowSaveModal(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleRender}
+                  className="bg-violet-600 hover:bg-violet-700 text-white"
+                >
+                  Start Export
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
