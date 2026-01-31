@@ -8,7 +8,7 @@ export const GAP_BETWEEN_CLIPS = 16;
 
 export function getConstrainedHeight(
   ratio: "landscape" | "portrait",
-  zoomLevel: number
+  zoomLevel: number,
 ): number {
   const baseHeight =
     ratio === "landscape"
@@ -28,9 +28,20 @@ export function getConstrainedHeight(
 
 export function getClipWidth(
   ratio: "landscape" | "portrait",
-  zoomLevel: number
+  zoomLevel: number,
 ): number {
   const height = getConstrainedHeight(ratio, zoomLevel);
   if (ratio === "landscape") return (height * 16) / 9;
   return (height * 9) / 16;
+}
+
+export function doIntervalsOverlap(
+  start1: number,
+  duration1: number,
+  start2: number,
+  duration2: number,
+): boolean {
+  const end1 = start1 + duration1;
+  const end2 = start2 + duration2;
+  return start1 < end2 && start2 < end1;
 }
