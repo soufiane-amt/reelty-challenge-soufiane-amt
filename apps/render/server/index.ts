@@ -3,6 +3,7 @@ import { bundle } from "@remotion/bundler";
 import { renderMedia, selectComposition } from "@remotion/renderer";
 import path from "path";
 import cors from "cors";
+import crypto from "crypto";
 
 const app = express();
 app.use(express.json());
@@ -11,6 +12,22 @@ app.use(cors());
 app.use(express.static(path.join(__dirname, "../public")));
 app.use(express.static(path.join(__dirname, "../../app/public")));
 app.use("/renders", express.static(path.join(__dirname, "../renders")));
+
+const renderJobs = new Map<
+  string,
+  {
+    status: "processing" | "done" | "error";
+    progress: number;
+    url?: string;
+    error?: string;
+  }
+>();
+
+app.get("/progress/:id", (req, res) => {
+  const job = renderJobs.get(req.params.id);
+  if (!job) return res.status(404).json({ error: "Job not found" });
+  res.json(job);
+});
 
 app.post("/render", async (req, res) => {
   try {
@@ -51,35 +68,61 @@ app.post("/render", async (req, res) => {
       texts,
     });
 
-    const bundled = await bundle({
-      entryPoint: path.join(__dirname, "../remotion/index.ts"),
-    });
+    const id = crypto.randomUUID();
+    renderJobs.set(id, { status: "processing", progress: 0 });
 
-    const compositionId = "MyComp";
+    res.json({ id });
 
-    const outputLocation = path.join(__dirname, `../renders/${Date.now()}.mp4`);
+    (async () => {
+      try {
+        const bundled = await bundle({
+          entryPoint: path.join(__dirname, "../remotion/index.ts"),
+        });
 
-    await renderMedia({
-      composition: {
-        id: compositionId,
-        props: { clips: processedClips, texts },
-        width: ratio === "landscape" ? 1920 : 1080,
-        height: ratio === "landscape" ? 1080 : 1920,
-        fps: 30,
-        durationInFrames: Math.round(
-          processedClips.reduce(
-            (acc: number, clip: any) => acc + clip.duration,
-            0,
-          ) * 30,
-        ),
-      },
-      serveUrl: bundled,
-      codec: "h264",
-      outputLocation,
-    });
+        const compositionId = "MyComp";
+        const outputLocation = path.join(
+          __dirname,
+          `../renders/${Date.now()}.mp4`,
+        );
 
-    const filename = path.basename(outputLocation);
-    res.json({ url: `http://localhost:3001/renders/${filename}` });
+        await renderMedia({
+          composition: {
+            id: compositionId,
+            props: { clips: processedClips, texts },
+            width: ratio === "landscape" ? 1920 : 1080,
+            height: ratio === "landscape" ? 1080 : 1920,
+            fps: 30,
+            durationInFrames: Math.round(
+              processedClips.reduce(
+                (acc: number, clip: any) => acc + clip.duration,
+                0,
+              ) * 30,
+            ),
+          },
+          serveUrl: bundled,
+          codec: "h264",
+          outputLocation,
+          onProgress: ({ progress }) => {
+            const job = renderJobs.get(id);
+            if (job) job.progress = progress;
+          },
+        });
+
+        const filename = path.basename(outputLocation);
+        renderJobs.set(id, {
+          status: "done",
+          progress: 1,
+          url: `http://localhost:3001/renders/${filename}`,
+        });
+      } catch (err) {
+        console.error("Render background error:", err);
+        renderJobs.set(id, {
+          status: "error",
+          progress: 0,
+          error: (err as Error).message,
+        });
+      }
+    })();
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: (err as Error).message });
