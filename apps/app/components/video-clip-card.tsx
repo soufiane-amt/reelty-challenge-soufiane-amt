@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { Minus, Plus } from "lucide-react";
+import { Fullscreen, Minus, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { twMerge } from "tailwind-merge";
 
@@ -15,6 +15,8 @@ interface VideoClipCardProps {
   onRemove?: (id: string) => void;
   onAdd?: (id: string) => void;
   width?: number;
+  isSelected?: boolean;
+  onSelect?: (id: string) => void;
 }
 
 export default function VideoClipCard({
@@ -26,6 +28,8 @@ export default function VideoClipCard({
   onRemove,
   onAdd,
   width,
+  isSelected,
+  onSelect,
 }: VideoClipCardProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -39,25 +43,26 @@ export default function VideoClipCard({
   return (
     <div
       className={cn(
-        "relative rounded-xl bg-zinc-800/50",
+        "relative rounded-sm bg-zinc-800/50",
         !width && (ratio === "landscape" ? "aspect-video" : "aspect-9/16"),
       )}
       style={{
-        height: `${height}px`,
+        height: `${height / 2}px`,
         width: width ? `${width}px` : undefined,
         flexShrink: 0,
       }}
-      onClick={() => isRemoved && onAdd?.(id)}
+      onClick={() => (isRemoved ? onAdd?.(id) : onSelect?.(id))}
     >
       <div
         className={twMerge(
-          "relative size-full rounded-xl bg-zinc-900/50",
+          "relative size-full rounded-sm bg-zinc-900/50",
           !isRemoved && "cursor-move",
+          isSelected && "ring-2 ring-violet-500",
         )}
       >
         <div
           className={twMerge(
-            "relative size-full overflow-hidden rounded-xl duration-300",
+            "relative size-full overflow-hidden rounded-sm duration-300",
             isRemoved && "cursor-pointer opacity-50 hover:opacity-70",
           )}
         >
