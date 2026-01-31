@@ -50,15 +50,15 @@ export default function DraggableText({
         >
           <div
             className={cn(
-              "relative flex items-center gap-2 rounded-lg border-2 bg-white px-5 py-2 shadow transition-colors",
-              "border-[#EDEDED] cursor-pointer hover:border-[#8E2DF6]",
+              "relative flex items-center gap-2 rounded-lg border-2 bg-zinc-800 px-5 py-2 shadow transition-colors",
+              "border-zinc-700 cursor-pointer hover:border-violet-500",
             )}
             style={{ width: "100%", maxWidth: "200px" }}
             onClick={onClick}
           >
             <div className="relative flex items-center gap-2 pl-2">
               <button
-                className="flex size-8 items-center justify-center rounded-md border border-[#E9E9E9] bg-[#F5F5F5] text-[#A3A3A3] transition-all hover:bg-white"
+                className="flex size-8 items-center justify-center rounded-md border border-zinc-600 bg-zinc-700 text-zinc-400 transition-all hover:bg-zinc-600 hover:text-zinc-200"
                 onClick={(e) => {
                   e.stopPropagation();
                   onClick?.();
@@ -114,10 +114,10 @@ export default function DraggableText({
       >
         <div
           className={cn(
-            "relative flex items-center gap-2 rounded-lg border-2 bg-white px-5 py-2 shadow-md cursor-move",
+            "relative flex items-center gap-2 rounded-lg border-2 px-5 py-2 shadow-md cursor-move",
             isActive
-              ? "border-[#8E2DF6] bg-white"
-              : "border-[#F5F5F5] bg-[#F5F5F5]",
+              ? "border-violet-500 bg-zinc-800"
+              : "border-zinc-700 bg-zinc-800",
           )}
           style={{ width: "100%", height: "100%" }}
           onClick={onClick}
@@ -127,8 +127,8 @@ export default function DraggableText({
               className={cn(
                 "flex size-8 items-center justify-center rounded-md border transition-colors",
                 isActive
-                  ? "border-black bg-black text-white"
-                  : "border-[#E9E9E9] bg-white text-[#A3A3A3]",
+                  ? "border-violet-600 bg-violet-600 text-white"
+                  : "border-zinc-600 bg-zinc-700 text-zinc-400",
               )}
               onClick={(e) => {
                 e.stopPropagation();
@@ -137,21 +137,21 @@ export default function DraggableText({
             >
               <Type
                 size={16}
-                className={isActive ? "text-white" : "text-[#A3A3A3]"}
+                className={isActive ? "text-white" : "text-zinc-400"}
               />
             </button>
-            {isActive&& textContent && (
-              <span className="text-sm whitespace-nowrap text-black">
+            {isActive && textContent && (
+              <span className="text-sm whitespace-nowrap text-zinc-100">
                 {textContent}
               </span>
             )}
           </div>
           <div
-            className="absolute right-0 top-0 flex h-full w-6 cursor-ew-resize items-center justify-center rounded-r-lg hover:bg-black/5"
+            className="absolute right-0 top-0 flex h-full w-6 cursor-ew-resize items-center justify-center rounded-r-lg hover:bg-white/5"
             onPointerDown={handleResizePointerDown}
             onMouseDown={(e) => e.stopPropagation()}
           >
-            <div className="h-4 w-1 rounded-full bg-gray-300" />
+            <div className="h-4 w-1 rounded-full bg-zinc-600" />
           </div>
         </div>
       </div>

@@ -79,7 +79,7 @@ const Magnifier = ({
   return (
     <div
       className={twMerge(
-        "flex items-end justify-center rounded-2xl border border-[#E5E5E5] px-3.5 py-4",
+        "flex items-end justify-center rounded-2xl border border-zinc-800 bg-zinc-900 px-3.5 py-4",
         isLoading && "opacity-50",
       )}
     >
@@ -88,7 +88,7 @@ const Magnifier = ({
         disabled={zoom <= minZoom || isLoading}
         className="disabled:cursor-not-allowed disabled:opacity-50"
       >
-        <ZoomOut size={24} className="text-black" />
+        <ZoomOut size={24} className="text-zinc-400 hover:text-zinc-100" />
       </button>
       <div className="relative mx-3 flex-1">
         <input
@@ -98,9 +98,9 @@ const Magnifier = ({
           step={0.1}
           value={zoom}
           onChange={(e) => handleZoomChange(parseFloat(e.target.value))}
-          className="slider h-1 w-full cursor-pointer appearance-none rounded-full bg-gray-200 disabled:cursor-not-allowed"
+          className="slider h-1 w-full cursor-pointer appearance-none rounded-full bg-zinc-800 disabled:cursor-not-allowed"
           style={{
-            background: `linear-gradient(to right, #000 0%, #000 ${((zoom - minZoom) / (maxZoom - minZoom)) * 100}%, #E5E5E5 ${((zoom - minZoom) / (maxZoom - minZoom)) * 100}%, #E5E5E5 100%)`,
+            background: `linear-gradient(to right, #7c3aed 0%, #7c3aed ${((zoom - minZoom) / (maxZoom - minZoom)) * 100}%, #27272a ${((zoom - minZoom) / (maxZoom - minZoom)) * 100}%, #27272a 100%)`,
           }}
           disabled={isLoading}
         />
@@ -110,7 +110,7 @@ const Magnifier = ({
         disabled={zoom >= maxZoom || isLoading}
         className="disabled:cursor-not-allowed disabled:opacity-50"
       >
-        <ZoomIn size={24} className="text-black" />
+        <ZoomIn size={24} className="text-zinc-400 hover:text-zinc-100" />
       </button>
     </div>
   );

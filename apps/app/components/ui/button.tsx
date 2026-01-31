@@ -8,12 +8,13 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-black text-white shadow-xs hover:bg-black/90",
-        destructive: "bg-red-500 text-white shadow-xs hover:bg-red-600",
-        outline: "border bg-background shadow-xs hover:bg-gray-100",
-        secondary: "bg-gray-200 text-gray-900 shadow-xs hover:bg-gray-300",
-        ghost: "hover:bg-gray-100",
-        link: "text-primary underline-offset-4 hover:underline",
+        default: "bg-violet-600 text-white shadow-xs hover:bg-violet-700",
+        destructive: "bg-rose-500 text-white shadow-xs hover:bg-rose-600",
+        outline:
+          "border border-zinc-700 bg-transparent text-zinc-100 shadow-xs hover:bg-zinc-800",
+        secondary: "bg-zinc-800 text-zinc-100 shadow-xs hover:bg-zinc-700",
+        ghost: "hover:bg-zinc-800 text-zinc-100",
+        link: "text-violet-500 underline-offset-4 hover:underline",
       },
       size: {
         default: "h-9 px-4 py-2",
@@ -23,7 +24,7 @@ const buttonVariants = cva(
       },
     },
     defaultVariants: { variant: "default", size: "default" },
-  }
+  },
 );
 
 function Button({
@@ -35,7 +36,12 @@ function Button({
 }: React.ComponentProps<"button"> &
   VariantProps<typeof buttonVariants> & { asChild?: boolean }) {
   const Comp = asChild ? Slot : "button";
-  return <Comp className={cn(buttonVariants({ variant, size, className }))} {...props} />;
+  return (
+    <Comp
+      className={cn(buttonVariants({ variant, size, className }))}
+      {...props}
+    />
+  );
 }
 
 export { Button, buttonVariants };

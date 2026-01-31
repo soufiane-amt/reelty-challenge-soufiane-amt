@@ -39,7 +39,7 @@ export default function VideoClipCard({
   return (
     <div
       className={cn(
-        "relative rounded-xl bg-black/5",
+        "relative rounded-xl bg-zinc-800/50",
         !width && (ratio === "landscape" ? "aspect-video" : "aspect-9/16"),
       )}
       style={{
@@ -51,7 +51,7 @@ export default function VideoClipCard({
     >
       <div
         className={twMerge(
-          "relative size-full rounded-xl bg-black/20",
+          "relative size-full rounded-xl bg-zinc-900/50",
           !isRemoved && "cursor-move",
         )}
       >
@@ -75,7 +75,12 @@ export default function VideoClipCard({
         </div>
         <button
           type="button"
-          className="absolute -top-2 -right-2 z-30 flex size-6 items-center justify-center rounded-md border-2 border-[#EDEDED] bg-black text-white duration-200 hover:scale-[1.1] hover:transform"
+          className={cn(
+            "absolute -top-2 -right-2 z-30 flex size-6 items-center justify-center rounded-md border-2 border-zinc-700 text-white duration-200 hover:scale-[1.1] hover:transform",
+            isRemoved
+              ? "bg-violet-600 hover:bg-violet-700"
+              : "bg-rose-500 hover:bg-rose-600",
+          )}
           onClick={handleButtonClick}
           onMouseDown={(e) => {
             e.stopPropagation();

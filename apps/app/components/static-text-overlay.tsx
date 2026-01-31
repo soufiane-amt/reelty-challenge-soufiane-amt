@@ -30,17 +30,26 @@ export default function StaticTextOverlay({
   if (!isActive || !textContent) {
     return (
       <div className="group flex items-center px-6">
-        <div className="flex items-center" style={{ transform: "translateX(0px)" }}>
+        <div
+          className="flex items-center"
+          style={{ transform: "translateX(0px)" }}
+        >
           <div
             className={twMerge(
-              "relative flex items-center gap-2 rounded-lg border-2 bg-white px-5 py-2 shadow transition-colors",
-              "border-[#EDEDED] cursor-pointer hover:border-[#8E2DF6]"
+              "relative flex items-center gap-2 rounded-lg border-2 bg-zinc-800 px-5 py-2 shadow transition-colors",
+              "border-zinc-700 cursor-pointer hover:border-violet-500",
             )}
             style={{ width: `${clipWidth}px` }}
             onClick={onClick}
           >
             <div className="relative flex items-center gap-2 pl-2">
-              <button className="flex size-8 items-center justify-center rounded-md border border-[#E9E9E9] bg-[#F5F5F5] text-[#A3A3A3] transition-all hover:bg-white" onClick={(e) => { e.stopPropagation(); onClick?.(); }}>
+              <button
+                className="flex size-8 items-center justify-center rounded-md border border-zinc-600 bg-zinc-700 text-zinc-400 transition-all hover:bg-zinc-600 hover:text-zinc-200"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onClick?.();
+                }}
+              >
                 <Type size={16} />
               </button>
             </div>
@@ -52,11 +61,16 @@ export default function StaticTextOverlay({
 
   return (
     <div className="group flex items-center px-6">
-      <div className="flex items-center" style={{ transform: `translateX(${xPosition}px)` }}>
+      <div
+        className="flex items-center"
+        style={{ transform: `translateX(${xPosition}px)` }}
+      >
         <div
           className={twMerge(
-            "relative flex items-center gap-2 rounded-lg border-2 bg-white px-5 py-2 shadow-md transition-colors",
-            isActive ? "border-[#8E2DF6] bg-white cursor-move" : "border-[#F5F5F5] bg-[#F5F5F5]"
+            "relative flex items-center gap-2 rounded-lg border-2 px-5 py-2 shadow-md transition-colors",
+            isActive
+              ? "border-violet-500 bg-zinc-800 cursor-move"
+              : "border-zinc-700 bg-zinc-800",
           )}
           style={{ width: `${width}px` }}
           onClick={onClick}
@@ -65,13 +79,25 @@ export default function StaticTextOverlay({
             <button
               className={twMerge(
                 "flex size-8 items-center justify-center rounded-md border transition-all",
-                isActive ? "border-black bg-black text-white hover:bg-black/90" : "border-[#E9E9E9] bg-white text-[#A3A3A3] hover:bg-[#F5F5F5]"
+                isActive
+                  ? "border-violet-600 bg-violet-600 text-white hover:bg-violet-700"
+                  : "border-zinc-600 bg-zinc-700 text-zinc-400 hover:bg-zinc-600",
               )}
-              onClick={(e) => { e.stopPropagation(); onClick?.(); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onClick?.();
+              }}
             >
-              <Type size={16} className={isActive ? "text-white" : "text-[#A3A3A3]"} />
+              <Type
+                size={16}
+                className={isActive ? "text-white" : "text-zinc-400"}
+              />
             </button>
-            {isActive && textContent && <span className="text-sm whitespace-nowrap text-black">{textContent}</span>}
+            {isActive && textContent && (
+              <span className="text-sm whitespace-nowrap text-zinc-100">
+                {textContent}
+              </span>
+            )}
           </div>
         </div>
       </div>

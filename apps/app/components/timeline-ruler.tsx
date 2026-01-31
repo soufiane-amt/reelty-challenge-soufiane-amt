@@ -6,7 +6,7 @@ interface TimelineRulerProps {
 }
 
 export const TimelineRuler = ({ duration, zoomLevel }: TimelineRulerProps) => {
-  const ticks:any = [];
+  const ticks: any = [];
 
   const step = zoomLevel < 20 ? 5 : 1;
 
@@ -20,10 +20,10 @@ export const TimelineRuler = ({ duration, zoomLevel }: TimelineRulerProps) => {
         style={{ left: `${i * zoomLevel}px` }}
       >
         <div
-          className={`border-l border-gray-300 ${isMajor ? "h-3" : "h-1.5"}`}
+          className={`border-l border-zinc-700 ${isMajor ? "h-3" : "h-1.5"}`}
         />
         {isMajor && (
-          <span className="text-[10px] text-gray-400 -ml-1 mt-0.5 font-mono select-none">
+          <span className="text-[10px] text-zinc-500 -ml-1 mt-0.5 font-mono select-none">
             {formatTime(i)}
           </span>
         )}
