@@ -14,6 +14,7 @@ interface VideoClipCardProps {
   isRemoved?: boolean;
   onRemove?: (id: string) => void;
   onAdd?: (id: string) => void;
+  width?: number;
 }
 
 export default function VideoClipCard({
@@ -24,6 +25,7 @@ export default function VideoClipCard({
   isRemoved = false,
   onRemove,
   onAdd,
+  width,
 }: VideoClipCardProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -38,13 +40,27 @@ export default function VideoClipCard({
     <div
       className={cn(
         "relative rounded-xl bg-black/5",
-        ratio === "landscape" ? "aspect-video" : "aspect-9/16"
+        !width && (ratio === "landscape" ? "aspect-video" : "aspect-9/16"),
       )}
-      style={{ height: `${height}px` }}
+      style={{
+        height: `${height}px`,
+        width: width ? `${width}px` : undefined,
+        flexShrink: 0,
+      }}
       onClick={() => isRemoved && onAdd?.(id)}
     >
-      <div className={twMerge("relative size-full rounded-xl bg-black/20", !isRemoved && "cursor-move")}>
-        <div className={twMerge("relative size-full overflow-hidden rounded-xl duration-300", isRemoved && "cursor-pointer opacity-50 hover:opacity-70")}>
+      <div
+        className={twMerge(
+          "relative size-full rounded-xl bg-black/20",
+          !isRemoved && "cursor-move",
+        )}
+      >
+        <div
+          className={twMerge(
+            "relative size-full overflow-hidden rounded-xl duration-300",
+            isRemoved && "cursor-pointer opacity-50 hover:opacity-70",
+          )}
+        >
           <video
             ref={videoRef}
             src={videoUrl}
@@ -61,11 +77,18 @@ export default function VideoClipCard({
           type="button"
           className="absolute -top-2 -right-2 z-30 flex size-6 items-center justify-center rounded-md border-2 border-[#EDEDED] bg-black text-white duration-200 hover:scale-[1.1] hover:transform"
           onClick={handleButtonClick}
-          onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
+          onMouseDown={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+          }}
           onPointerDown={(e) => e.stopPropagation()}
           onTouchStart={(e) => e.stopPropagation()}
         >
-          {isRemoved ? <Plus size={12} strokeWidth={2.5} /> : <Minus size={12} strokeWidth={2.5} />}
+          {isRemoved ? (
+            <Plus size={12} strokeWidth={2.5} />
+          ) : (
+            <Minus size={12} strokeWidth={2.5} />
+          )}
         </button>
       </div>
     </div>
