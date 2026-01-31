@@ -150,6 +150,24 @@ function PreviewPlayer({
     setIsPlaying(!isPlaying);
   };
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === "Space") {
+        const target = e.target as HTMLElement;
+        if (
+          target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable
+        )
+          return;
+        e.preventDefault();
+        handlePlayPause();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isPlaying]);
+
   const handleEnded = () => {
     if (activeClipIndex < clips.length - 1) {
       setActiveClipIndex((prev) => prev + 1);
@@ -180,8 +198,8 @@ function PreviewPlayer({
       className={twMerge(
         "relative flex items-center justify-center overflow-hidden rounded-xl border border-zinc-800 bg-black shadow-2xl",
         ratio === "landscape"
-          ? "aspect-video w-full max-w-5xl"
-          : "aspect-[9/16] h-full max-h-[600px]",
+          ? "aspect-video h-auto w-full max-w-5xl max-h-full"
+          : "aspect-[9/16] h-full max-h-full w-auto",
       )}
     >
       <video
@@ -244,6 +262,7 @@ export default function tchVideoEditor() {
 
   const [textTracks, setTextTracks] = useState<TextTrack[]>([]);
   const [editingTrackId, setEditingTrackId] = useState<string | null>(null);
+  const [selectedClipId, setSelectedClipId] = useState<string | null>(null);
 
   const [textInput, setTextInput] = useState("");
   const [selectedTextAnimation, setSelectedTextAnimation] = useState<
@@ -381,6 +400,7 @@ export default function tchVideoEditor() {
     const track = textTracks.find((t) => t.id === id);
     if (track) {
       setEditingTrackId(id);
+      setSelectedClipId(null);
       setTextInput(track.content);
       setSelectedTextAnimation(track.animation);
       setSidebarTab("text");
@@ -390,6 +410,7 @@ export default function tchVideoEditor() {
 
   const handleAddTextClick = () => {
     setEditingTrackId(null);
+    setSelectedClipId(null);
     setTextInput("");
     setSelectedTextAnimation(null);
     setSidebarTab("text");
@@ -499,6 +520,7 @@ export default function tchVideoEditor() {
     const clip = activeClips.find((c) => c.id === id);
     if (clip) {
       setActiveClips(activeClips.filter((c) => c.id !== id));
+      if (selectedClipId === id) setSelectedClipId(null);
       setRemovedClips([...removedClips, clip]);
     }
   };
@@ -511,6 +533,28 @@ export default function tchVideoEditor() {
     }
   };
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === "Delete" || e.code === "Backspace") {
+        const target = e.target as HTMLElement;
+        if (
+          target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable
+        )
+          return;
+
+        if (editingTrackId) {
+          handleDeleteText();
+        } else if (selectedClipId) {
+          handleRemoveClip(selectedClipId);
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [editingTrackId, selectedClipId, activeClips, textTracks]);
+
   const totalTimelineDuration = activeClips.reduce(
     (acc, clip) => acc + clip.duration,
     0,
@@ -520,7 +564,6 @@ export default function tchVideoEditor() {
     <div className="flex h-full w-full flex-col bg-zinc-950 text-zinc-100 overflow-hidden">
       {toast && <Toast message={toast} />}
 
-      {/* Top Header */}
       <header className="flex h-16 shrink-0 items-center justify-between border-b border-zinc-800 bg-zinc-950 px-6 z-50">
         <div className="flex items-center gap-3">
           <div className="flex size-9 items-center justify-center rounded-xl bg-violet-500/10 text-violet-500">
@@ -543,9 +586,7 @@ export default function tchVideoEditor() {
         />
       </header>
 
-      {/* Main Content Area */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Left Sidebar - Asset Library / Text Options */}
         <aside className="w-80 shrink-0 border-r border-zinc-800 bg-zinc-900/50 flex flex-col z-40">
           <div className="flex border-b border-zinc-800">
             <button
@@ -630,10 +671,8 @@ export default function tchVideoEditor() {
           </div>
         </aside>
 
-        {/* Center & Bottom Area */}
         <div className="flex flex-1 flex-col min-w-0">
-          {/* Center - Video Player Preview */}
-          <main className="flex-1 bg-zinc-950 relative flex items-center justify-center p-8">
+          <main className="flex-1 bg-zinc-950 relative flex items-center justify-center p-4 overflow-hidden">
             <PreviewPlayer
               clips={activeClips}
               textTracks={textTracks}
@@ -642,9 +681,7 @@ export default function tchVideoEditor() {
             />
           </main>
 
-          {/* Bottom - Timeline */}
-          <section className="h-96 shrink-0 border-t border-zinc-800 bg-zinc-900 flex flex-col z-30">
-            {/* Timeline Toolbar */}
+          <section className="h-72 shrink-0 border-t border-zinc-800 bg-zinc-900 flex flex-col z-30">
             <div className="flex h-12 shrink-0 items-center justify-between border-b border-zinc-800 px-4 bg-zinc-900/50">
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2 text-xs font-medium text-zinc-400 uppercase tracking-wider">
@@ -675,7 +712,6 @@ export default function tchVideoEditor() {
               </div>
             </div>
 
-            {/* Timeline Tracks */}
             <div
               ref={containerRef}
               className="scrollbar scrollbar-w-1.5 scrollbar-thumb-zinc-700 scrollbar-thumb-rounded-full scrollbar-hover:scrollbar-thumb-zinc-500 relative flex flex-1 flex-col overflow-hidden overflow-y-auto bg-zinc-900/50"
@@ -689,7 +725,7 @@ export default function tchVideoEditor() {
                 <div
                   ref={clipsScrollContainerRef}
                   className={twMerge(
-                    "scrollbar scrollbar-h-1.5 scrollbar-thumb-zinc-700 scrollbar-thumb-rounded-full scrollbar-hover:scrollbar-thumb-zinc-500 mx-6 my-6 overflow-x-auto overflow-y-hidden pb-12",
+                    "scrollbar scrollbar-h-1.5 scrollbar-thumb-zinc-700 scrollbar-thumb-rounded-full scrollbar-hover:scrollbar-thumb-zinc-500 mx-4 my-2 overflow-x-auto overflow-y-hidden pb-6",
                     isTextOpen &&
                       "opacity-50 grayscale transition-all duration-300",
                   )}
@@ -698,7 +734,7 @@ export default function tchVideoEditor() {
                     className="relative"
                     style={{
                       width: `${totalTimelineDuration * zoomLevel}px`,
-                      minHeight: "200px",
+                      minHeight: "100%",
                     }}
                   >
                     <TimelineRuler
@@ -706,7 +742,6 @@ export default function tchVideoEditor() {
                       zoomLevel={zoomLevel}
                     />
 
-                    {/* Text Tracks Layer */}
                     <div className="absolute top-8 left-0 w-full h-16 z-20">
                       {textTracks.map((track) => (
                         <DraggableText
@@ -742,8 +777,7 @@ export default function tchVideoEditor() {
                       ))}
                     </div>
 
-                    {/* Video Tracks Layer */}
-                    <div className="flex items-center pt-28">
+                    <div className="flex items-center pt-10">
                       <SortableContext
                         items={activeClips}
                         strategy={horizontalListSortingStrategy}
@@ -760,6 +794,12 @@ export default function tchVideoEditor() {
                             onRemove={handleRemoveClip}
                             onAdd={handleAddClip}
                             width={video.duration * zoomLevel}
+                            isSelected={selectedClipId === video.id}
+                            onSelect={(id) => {
+                              setSelectedClipId(id);
+                              setEditingTrackId(null);
+                              setIsTextOpen(false);
+                            }}
                           />
                         ))}
                       </SortableContext>
@@ -771,7 +811,6 @@ export default function tchVideoEditor() {
                       <div className="text-xs text-zinc-500 writing-vertical-lr rotate-180">
                         Bin
                       </div>
-                      {/* Removed clips UI */}
                       <div
                         className={twMerge(
                           "flex size-11 items-center justify-center rounded-lg border",
