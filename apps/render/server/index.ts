@@ -20,6 +20,9 @@ if (!fs.existsSync(tempDir)) {
 }
 app.use("/temp", express.static(tempDir));
 
+const RENDER_SERVER_URL =
+  process.env.NEXT_PUBLIC_RENDER_SERVER_URL || "http://localhost:3001";
+
 const renderJobs = new Map<
   string,
   {
@@ -85,14 +88,14 @@ app.post("/render", async (req, res) => {
 
                     return {
                       ...clip,
-                      url: `${process.env.NEXT_PUBLIC_RENDER_SERVER_URL}/temp/${filename}`,
+                      url: `${RENDER_SERVER_URL}/temp/${filename}`,
                     };
                   }
                 }
               } else if (clip.url.startsWith("/")) {
                 return {
                   ...clip,
-                  url: `${process.env.NEXT_PUBLIC_RENDER_SERVER_URL}${clip.url}`,
+                  url: `${RENDER_SERVER_URL}${clip.url}`,
                 };
               }
             }
@@ -149,7 +152,7 @@ app.post("/render", async (req, res) => {
         renderJobs.set(id, {
           status: "done",
           progress: 1,
-          url: `${process.env.NEXT_PUBLIC_RENDER_SERVER_URL}/renders/${filename}`,
+          url: `${RENDER_SERVER_URL}/renders/${filename}`,
         });
       } catch (err) {
         console.error("Render background error:", err);
