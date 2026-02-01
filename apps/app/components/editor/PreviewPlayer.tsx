@@ -4,7 +4,8 @@ import { TextTrack } from "@/types/types";
 import { useEffect, useRef, useState } from "react";
 import { twMerge } from "tailwind-merge";
 import { Play } from "lucide-react";
-import TextOverlay from "./TextOverlay";
+import TextOverlay from "../text/TextOverlay";
+import { getActiveTracks } from "@/lib/timeline-utils";
 
 function PreviewPlayer({
   clips,
@@ -35,11 +36,7 @@ function PreviewPlayer({
 
   const globalTime = totalDurationBeforeCurrent + currentTime;
 
-  const activeTexts = textTracks.filter(
-    (track) =>
-      globalTime >= track.startPosition &&
-      globalTime < track.startPosition + track.duration,
-  );
+  const activeTexts = getActiveTracks(textTracks, globalTime);
 
   const handlePlayPause = () => {
     if (!videoRef.current) return;

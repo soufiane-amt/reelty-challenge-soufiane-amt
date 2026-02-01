@@ -1,7 +1,7 @@
 import { LinkIcon, Upload } from "lucide-react";
-import TextDock from "./text-dock";
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
+import TextDock from "../text/text-dock";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
 import { twMerge } from "tailwind-merge";
 
 interface SideBarProps {
@@ -66,7 +66,7 @@ function SideBar({
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-zinc-700 [&::-webkit-scrollbar-thumb]:hover:bg-zinc-500 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar]:w-2">
         {sidebarTab === "media" && (
           <div className="p-6 space-y-6">
             <div className="space-y-4">

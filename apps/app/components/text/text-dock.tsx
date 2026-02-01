@@ -1,31 +1,13 @@
 "use client";
 
-export function replaceAnimationPlaceholder(animationData: any, text: string) {
-  const jsonString = JSON.stringify(animationData);
-  if (!jsonString.includes("{{content}}")) return animationData;
-  const cloned = structuredClone
-    ? structuredClone(animationData)
-    : JSON.parse(JSON.stringify(animationData));
-  const replaceInObject = (obj: any): any => {
-    if (typeof obj === "string") return obj.replace(/\{\{content\}\}/g, text);
-    if (Array.isArray(obj)) return obj.map(replaceInObject);
-    if (obj && typeof obj === "object") {
-      const result: any = {};
-      for (const key in obj) result[key] = replaceInObject(obj[key]);
-      return result;
-    }
-    return obj;
-  };
-  return replaceInObject(cloned);
-}
-
 import Lottie from "lottie-react";
 import { useEffect, useMemo, useState } from "react";
 import { twMerge } from "tailwind-merge";
 import { trpc } from "@/api/client";
 import { useDebounce } from "@/hooks/use-debounce";
-import { Button } from "./ui/button";
+import { Button } from "../ui/button";
 import { RotateCcw } from "lucide-react";
+import { replaceAnimationPlaceholder } from "@/lib/animation-utils";
 
 interface TextDockProps {
   isOpen: boolean;
@@ -56,7 +38,6 @@ const TemplateItem = ({
   isSelected: boolean;
   onSelect: () => void;
 }) => {
-  console.log("Rendering TemplateItem:", template);
   const animationData = useMemo(() => {
     if (!template.content) return null;
     return replaceAnimationPlaceholder(
@@ -136,19 +117,6 @@ export default function TextDock({
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (
-      e.key === "Enter" &&
-      textInput &&
-      selectedTextAnimation &&
-      hasChanges &&
-      !exceedsLimit
-    ) {
-      e.preventDefault();
-      onApplyText();
-    }
-  };
-
   return (
     <div className="flex h-full flex-col gap-6 p-6">
       <div className="flex flex-col gap-3">
@@ -206,7 +174,7 @@ export default function TextDock({
         <h3 className="text-sm font-medium text-zinc-400 uppercase tracking-wider">
           Style
         </h3>
-        <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent">
+        <div className="flex-1 overflow-y-auto pr-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-zinc-700 [&::-webkit-scrollbar-thumb]:hover:bg-zinc-500 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar]:w-2">
           {isLoading && (
             <div className="flex items-center justify-center p-4">
               <div className="h-8 w-8 animate-spin rounded-full border-4 border-zinc-700 border-t-violet-500" />

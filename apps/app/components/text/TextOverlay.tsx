@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import Lottie from "lottie-react";
-import { replaceAnimationPlaceholder } from "./text-dock";
+import { replaceAnimationPlaceholder } from "@/lib/animation-utils";
 import { TextTrack } from "@/types/types";
 
 const TextOverlay = ({
@@ -19,20 +19,26 @@ const TextOverlay = ({
   }, [template, text.content]);
 
   return (
-    <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+    <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-4">
       {animationData ? (
-        <div className="h-full w-full">
+        <div
+          style={{
+            transform: "scale(1.5) translateY(-50px)",
+            width: "100%",
+          }}
+        >
           <Lottie
             animationData={animationData}
             loop={true}
-            className="h-full w-full"
+            className="w-full"
+            rendererSettings={{ preserveAspectRatio: "xMidYMin meet" }}
           />
         </div>
       ) : (
         <div
           className="text-center font-sans font-bold text-white drop-shadow-lg"
           style={{
-            fontSize: ratio === "landscape" ? "4vw" : "3rem",
+            fontSize: ratio === "landscape" ? "4vw" : "5rem",
             textShadow: "0 2px 10px rgba(0,0,0,0.8)",
           }}
         >

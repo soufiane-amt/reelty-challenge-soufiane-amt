@@ -4,14 +4,21 @@ import { renderMedia, selectComposition } from "@remotion/renderer";
 import path from "path";
 import cors from "cors";
 import crypto from "crypto";
+import fs from "fs";
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: "500mb" }));
 app.use(cors());
 
 app.use(express.static(path.join(__dirname, "../public")));
 app.use(express.static(path.join(__dirname, "../../app/public")));
 app.use("/renders", express.static(path.join(__dirname, "../renders")));
+
+const tempDir = path.join(__dirname, "../temp");
+if (!fs.existsSync(tempDir)) {
+  fs.mkdirSync(tempDir, { recursive: true });
+}
+app.use("/temp", express.static(tempDir));
 
 const renderJobs = new Map<
   string,
@@ -52,21 +59,47 @@ app.post("/render", async (req, res) => {
       }
     }
 
-    const processedClips = clips?.map((clip: any) => {
-      if (typeof clip.url === "string" && clip.url.startsWith("/")) {
-        return {
-          ...clip,
-          url: `http://localhost:3001${clip.url}`,
-        };
-      }
-      return clip;
-    });
+    // Filter templates to only those used in the video to reduce input props size
+    const usedAnimationKeys = new Set(
+      (texts || []).map((t: any) => t.animation).filter(Boolean),
+    );
+    const relevantTemplates = templates?.filter((t: any) =>
+      usedAnimationKeys.has(t.key),
+    );
 
-    console.log("Rendering with:", {
-      clipsCount: processedClips?.length,
-      textsCount: texts?.length,
-      texts,
-    });
+    const processedClips = clips
+      ? await Promise.all(
+          clips.map(async (clip: any) => {
+            if (typeof clip.url === "string") {
+              if (clip.url.startsWith("data:")) {
+                const [header, base64Data] = clip.url.split(",");
+                if (header && base64Data) {
+                  const type = header.match(/:(.*?);/)?.[1];
+                  if (type) {
+                    const data = Buffer.from(base64Data, "base64");
+                    const extension = type.split("/")[1] || "mp4";
+                    const filename = `${crypto.randomUUID()}.${extension}`;
+                    const filePath = path.join(tempDir, filename);
+
+                    await fs.promises.writeFile(filePath, data);
+
+                    return {
+                      ...clip,
+                      url: `http://localhost:3001/temp/${filename}`,
+                    };
+                  }
+                }
+              } else if (clip.url.startsWith("/")) {
+                return {
+                  ...clip,
+                  url: `http://localhost:3001${clip.url}`,
+                };
+              }
+            }
+            return clip;
+          }),
+        )
+      : clips;
 
     const id = crypto.randomUUID();
     renderJobs.set(id, { status: "processing", progress: 0 });
@@ -88,7 +121,11 @@ app.post("/render", async (req, res) => {
         await renderMedia({
           composition: {
             id: compositionId,
-            props: { clips: processedClips, texts, templates },
+            props: {
+              clips: processedClips,
+              texts,
+              templates: relevantTemplates,
+            },
             width: ratio === "landscape" ? 1920 : 1080,
             height: ratio === "landscape" ? 1080 : 1920,
             fps: 30,

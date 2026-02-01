@@ -1,26 +1,11 @@
 "use client";
 
 import { getConstrainedHeight, doIntervalsOverlap } from "@/data/constants";
-import { useCallback, useEffect, useRef, useState, useMemo } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { usePinchZoom } from "@/hooks/use-pinch-zoom";
 import { SAMPLE_VIDEOS } from "@/data/sample-videos";
-import VideoClipCard from "./video-clip-card";
 import { twMerge } from "tailwind-merge";
-import { Button } from "./ui/button";
-import Magnifier from "./magnifier";
-import {
-  Plus,
-  Type,
-  Play,
-  Video as VideoIcon,
-  Layers,
-  Upload,
-  Link as LinkIcon,
-  FileVideo,
-  Save,
-} from "lucide-react";
-import TextDock from "./text-dock";
-
+import { Plus } from "lucide-react";
 import {
   DndContext,
   DragEndEvent,
@@ -29,26 +14,25 @@ import {
   useSensors,
   closestCenter,
 } from "@dnd-kit/core";
-import DraggableText from "./draggable-text";
+import DraggableText from "../text/draggable-text";
 import {
   arrayMove,
   SortableContext,
   horizontalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { SortableClip } from "./sortable-clip";
-import { TimelineRuler } from "./timeline-ruler";
-import Toast from "./ui/Toast";
-import { Input } from "./ui/input";
+import { SortableClip } from "../timeline/sortable-clip";
+import { TimelineRuler } from "../timeline/timeline-ruler";
+import Toast from "../ui/Toast";
 import { trpc } from "@/api/client";
-
-import { replaceAnimationPlaceholder } from "./text-dock";
 import { TextTrack } from "@/types/types";
-import TextOverlay from "./TextOverlay";
 import PreviewPlayer from "./PreviewPlayer";
-import RenderButton from "./RenderButton";
-import SideBar from "./SideBar";
-import Timeline from "./TimeLine";
-import Header from "./Header";
+import {
+  findAvailableTextSlot,
+  calculateSnappedTime,
+} from "@/lib/timeline-utils";
+import SideBar from "../layout/SideBar";
+import Timeline from "../timeline/TimeLine";
+import Header from "../layout/Header";
 
 const getVideoDuration = (url: string): Promise<number> => {
   return new Promise((resolve, reject) => {
@@ -97,7 +81,7 @@ export default function tchVideoEditor() {
     }
   }, [isTextOpen]);
 
-  const [activeClips, setActiveClips] = useState(SAMPLE_VIDEOS);
+  const [activeClips, setActiveClips] = useState<typeof SAMPLE_VIDEOS>([]);
   const [removedClips, setRemovedClips] = useState<typeof SAMPLE_VIDEOS>([]);
 
   const handleZoomChange = useCallback(
@@ -138,37 +122,20 @@ export default function tchVideoEditor() {
         let newStart = -1;
         let newDuration = DEFAULT_DURATION;
 
-        const sortedTracks = [...textTracks].sort(
-          (a, b) => a.startPosition - b.startPosition,
+        let start = findAvailableTextSlot(
+          textTracks,
+          totalDuration,
+          DEFAULT_DURATION,
         );
-
-        const findGap = (duration: number) => {
-          if (sortedTracks.length === 0) {
-            return totalDuration >= duration ? 0 : -1;
-          }
-
-          if (sortedTracks[0].startPosition >= duration) return 0;
-
-          for (let i = 0; i < sortedTracks.length - 1; i++) {
-            const currentEnd =
-              sortedTracks[i].startPosition + sortedTracks[i].duration;
-            const nextStart = sortedTracks[i + 1].startPosition;
-            if (nextStart - currentEnd >= duration) return currentEnd;
-          }
-
-          const lastTrack = sortedTracks[sortedTracks.length - 1];
-          const lastEnd = lastTrack.startPosition + lastTrack.duration;
-          if (totalDuration - lastEnd >= duration) return lastEnd;
-
-          return -1;
-        };
-
-        let start = findGap(DEFAULT_DURATION);
         if (start !== -1) {
           newStart = start;
           newDuration = DEFAULT_DURATION;
         } else {
-          start = findGap(MIN_DURATION);
+          start = findAvailableTextSlot(
+            textTracks,
+            totalDuration,
+            MIN_DURATION,
+          );
           if (start !== -1) {
             newStart = start;
             newDuration = MIN_DURATION;
@@ -232,7 +199,13 @@ export default function tchVideoEditor() {
     if (!file) return;
 
     try {
-      const url = URL.createObjectURL(file);
+      const url = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
       const duration = await getVideoDuration(url);
       const newClip = {
         id: crypto.randomUUID(),
@@ -291,14 +264,7 @@ export default function tchVideoEditor() {
       const SNAP_THRESHOLD_PX = 15;
       const snapThresholdSec = SNAP_THRESHOLD_PX / zoomLevel;
 
-      let accumulatedTime = 0;
-      for (const clip of activeClips) {
-        accumulatedTime += clip.duration;
-        if (Math.abs(newStart - accumulatedTime) < snapThresholdSec) {
-          newStart = accumulatedTime;
-          break;
-        }
-      }
+      newStart = calculateSnappedTime(newStart, activeClips, snapThresholdSec);
 
       const isOverlapping = textTracks.some((t) => {
         if (t.id === trackId) return false;
@@ -428,7 +394,7 @@ export default function tchVideoEditor() {
                 <div
                   ref={clipsScrollContainerRef}
                   className={twMerge(
-                    "scrollbar scrollbar-h-1.5 scrollbar-thumb-zinc-700 scrollbar-thumb-rounded-full scrollbar-hover:scrollbar-thumb-zinc-500 mx-4 my-2 overflow-x-auto overflow-y-hidden pb-6",
+                    "mx-4 my-2 overflow-x-auto overflow-y-hidden pb-6 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-zinc-700 [&::-webkit-scrollbar-thumb]:hover:bg-zinc-500 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar]:h-2",
                     isTextOpen &&
                       "opacity-50 grayscale transition-all duration-300",
                   )}

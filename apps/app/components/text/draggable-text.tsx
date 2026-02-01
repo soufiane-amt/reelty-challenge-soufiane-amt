@@ -114,7 +114,7 @@ export default function DraggableText({
       >
         <div
           className={cn(
-            "relative flex items-center gap-2 rounded-lg border-2 px-5 py-2 shadow-md cursor-move",
+            "relative flex items-center gap-2 rounded-lg border-2 pl-2 pr-6 py-2 shadow-md cursor-move overflow-hidden",
             isActive
               ? "border-violet-500 bg-zinc-800"
               : "border-zinc-700 bg-zinc-800",
@@ -122,10 +122,10 @@ export default function DraggableText({
           style={{ width: "100%", height: "100%" }}
           onClick={onClick}
         >
-          <div className="relative flex items-center gap-2 pl-2">
+          <div className="relative flex items-center gap-2 pl-1 min-w-0">
             <button
               className={cn(
-                "flex size-8 items-center justify-center rounded-md border transition-colors",
+                "flex size-8 items-center justify-center rounded-md border transition-colors shrink-0",
                 isActive
                   ? "border-violet-600 bg-violet-600 text-white"
                   : "border-zinc-600 bg-zinc-700 text-zinc-400",
@@ -141,7 +141,7 @@ export default function DraggableText({
               />
             </button>
             {isActive && textContent && (
-              <span className="text-sm whitespace-nowrap text-zinc-100">
+              <span className="text-sm whitespace-nowrap text-zinc-100 truncate">
                 {textContent}
               </span>
             )}

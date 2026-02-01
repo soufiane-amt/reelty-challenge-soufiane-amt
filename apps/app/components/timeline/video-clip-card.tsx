@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { Fullscreen, Minus, Plus } from "lucide-react";
+import { Minus, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { twMerge } from "tailwind-merge";
 

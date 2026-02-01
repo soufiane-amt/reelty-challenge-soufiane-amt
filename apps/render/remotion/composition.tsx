@@ -50,9 +50,27 @@ const TextLayer: React.FC<{ text: TextTrack; template: any }> = ({
   }, [template, text.content]);
 
   return (
-    <AbsoluteFill className="flex items-center justify-center">
+    <AbsoluteFill
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
       {animationData ? (
-        <Lottie animationData={animationData} loop />
+        <div
+          style={{
+            transform: "scale(1.5) translateY(-25%)",
+            width: "80%",
+          }}
+        >
+          <Lottie
+            animationData={animationData}
+            loop
+            rendererSettings={{ preserveAspectRatio: "xMidYMin meet" }}
+          />
+        </div>
       ) : (
         <div
           style={{
@@ -62,6 +80,7 @@ const TextLayer: React.FC<{ text: TextTrack; template: any }> = ({
             textShadow: "0 0 10px black",
             textAlign: "center",
             fontWeight: "bold",
+            marginTop: "-500px",
           }}
         >
           {text.content}
@@ -70,7 +89,6 @@ const TextLayer: React.FC<{ text: TextTrack; template: any }> = ({
     </AbsoluteFill>
   );
 };
-
 export const MyComposition: React.FC<MyCompositionProps> = ({
   clips,
   texts,

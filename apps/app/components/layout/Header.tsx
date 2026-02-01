@@ -1,5 +1,5 @@
 import { VideoIcon } from "lucide-react";
-import RenderButton from "./RenderButton";
+import RenderButton from "../editor/RenderButton";
 import { SAMPLE_VIDEOS } from "@/data/sample-videos";
 import { TextTrack } from "@/types/types";
 

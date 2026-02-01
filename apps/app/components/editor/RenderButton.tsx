@@ -1,10 +1,10 @@
 "use client";
 import { SAMPLE_VIDEOS } from "@/data/sample-videos";
-import { Button } from "./ui/button";
+import { Button } from "../ui/button";
 import { useState } from "react";
 import { TextTrack } from "@/types/types";
 import { twMerge } from "tailwind-merge";
-import { Input } from "./ui/input";
+import { Input } from "../ui/input";
 import { Save } from "lucide-react";
 
 function RenderButton({
