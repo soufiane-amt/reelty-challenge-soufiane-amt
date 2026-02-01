@@ -8,19 +8,16 @@ export function findAvailableTextSlot(
   totalDuration: number,
   requestedDuration: number,
 ): number {
-  // Sort tracks by start time to ensure linear scanning works
   const sorted = [...tracks].sort((a, b) => a.startPosition - b.startPosition);
 
   if (sorted.length === 0) {
     return totalDuration >= requestedDuration ? 0 : -1;
   }
 
-  // 1. Check gap before the first track
   if (sorted[0].startPosition >= requestedDuration) {
     return 0;
   }
 
-  // 2. Check gaps between tracks
   for (let i = 0; i < sorted.length - 1; i++) {
     const currentEnd = sorted[i].startPosition + sorted[i].duration;
     const nextStart = sorted[i + 1].startPosition;
@@ -29,7 +26,6 @@ export function findAvailableTextSlot(
     }
   }
 
-  // 3. Check gap after the last track
   const lastTrack = sorted[sorted.length - 1];
   const lastEnd = lastTrack.startPosition + lastTrack.duration;
   if (totalDuration - lastEnd >= requestedDuration) {
@@ -47,7 +43,6 @@ export function calculateSnappedTime(
   clips: { duration: number }[],
   snapThreshold: number,
 ): number {
-  // Snap to start (0)
   if (Math.abs(proposedTime) < snapThreshold) return 0;
 
   let accumulatedTime = 0;

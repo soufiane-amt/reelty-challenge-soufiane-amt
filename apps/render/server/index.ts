@@ -62,7 +62,6 @@ app.post("/render", async (req, res) => {
       }
     }
 
-    // Filter templates to only those used in the video to reduce input props size
     const usedAnimationKeys = new Set(
       (texts || []).map((t: any) => t.animation).filter(Boolean),
     );

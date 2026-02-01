@@ -3,7 +3,6 @@
 import { getConstrainedHeight, doIntervalsOverlap } from "@/data/constants";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePinchZoom } from "@/hooks/use-pinch-zoom";
-import { SAMPLE_VIDEOS } from "@/data/sample-videos";
 import { twMerge } from "tailwind-merge";
 import { Plus } from "lucide-react";
 import {
@@ -24,7 +23,7 @@ import { SortableClip } from "../timeline/sortable-clip";
 import { TimelineRuler } from "../timeline/timeline-ruler";
 import Toast from "../ui/Toast";
 import { trpc } from "@/api/client";
-import { TextTrack } from "@/types/types";
+import { Clip, TextTrack } from "@/types/types";
 import PreviewPlayer from "./PreviewPlayer";
 import {
   findAvailableTextSlot,
@@ -50,7 +49,7 @@ const getVideoDuration = (url: string): Promise<number> => {
 
 export default function tchVideoEditor() {
   const ratio: "portrait" | "landscape" = "portrait";
-  const [zoomLevel, setZoomLevel] = useState(30); // Pixels per second
+  const [zoomLevel, setZoomLevel] = useState(30);
   const clipsScrollContainerRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -81,8 +80,8 @@ export default function tchVideoEditor() {
     }
   }, [isTextOpen]);
 
-  const [activeClips, setActiveClips] = useState<typeof SAMPLE_VIDEOS>([]);
-  const [removedClips, setRemovedClips] = useState<typeof SAMPLE_VIDEOS>([]);
+  const [activeClips, setActiveClips] = useState<Clip[]>([]);
+  const [removedClips, setRemovedClips] = useState<Clip[]>([]);
 
   const handleZoomChange = useCallback(
     (newZoom: number) => setZoomLevel(newZoom),
@@ -219,7 +218,6 @@ export default function tchVideoEditor() {
       console.error(error);
       setToast("Failed to upload video");
     }
-    // Reset input
     e.target.value = "";
   };
 

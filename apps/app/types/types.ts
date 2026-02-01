@@ -5,3 +5,10 @@ export interface TextTrack {
   startPosition: number;
   duration: number;
 }
+
+export interface Clip {
+  id: string;
+  url: string;
+  duration: number;
+  thumbnail: string;
+}

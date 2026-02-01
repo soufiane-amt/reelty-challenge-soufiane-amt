@@ -1,14 +1,13 @@
 import { VideoIcon } from "lucide-react";
 import RenderButton from "../editor/RenderButton";
-import { SAMPLE_VIDEOS } from "@/data/sample-videos";
-import { TextTrack } from "@/types/types";
+import { Clip, TextTrack } from "@/types/types";
 
 interface HeaderProps {
   ratio: "portrait" | "landscape";
   textTracks: TextTrack[];
   setToast: React.Dispatch<React.SetStateAction<string | null>>;
   templates?: any[];
-  activeClips: typeof SAMPLE_VIDEOS;
+  activeClips: Clip[];
 }
 
 function Header({

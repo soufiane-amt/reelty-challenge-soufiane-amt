@@ -1,8 +1,7 @@
 "use client";
-import { SAMPLE_VIDEOS } from "@/data/sample-videos";
 import { Button } from "../ui/button";
 import { useState } from "react";
-import { TextTrack } from "@/types/types";
+import { Clip, TextTrack } from "@/types/types";
 import { twMerge } from "tailwind-merge";
 import { Input } from "../ui/input";
 import { Save } from "lucide-react";
@@ -15,7 +14,7 @@ function RenderButton({
   setToast,
   templates,
 }: {
-  clips: typeof SAMPLE_VIDEOS;
+  clips: Clip[];
   ratio: "portrait" | "landscape";
   textTracks: TextTrack[];
   className?: string;
@@ -58,7 +57,6 @@ function RenderButton({
       const data = await response.json();
       const jobId = data.id;
 
-      // Poll for progress
       while (true) {
         const statusRes = await fetch(
           `${process.env.NEXT_PUBLIC_RENDER_SERVER_URL}/progress/${jobId}`,

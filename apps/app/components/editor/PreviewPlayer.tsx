@@ -1,6 +1,5 @@
 "use client";
-import { SAMPLE_VIDEOS } from "@/data/sample-videos";
-import { TextTrack } from "@/types/types";
+import { Clip, TextTrack } from "@/types/types";
 import { useEffect, useRef, useState } from "react";
 import { twMerge } from "tailwind-merge";
 import { Play } from "lucide-react";
@@ -13,7 +12,7 @@ function PreviewPlayer({
   ratio,
   templates,
 }: {
-  clips: typeof SAMPLE_VIDEOS;
+  clips: Clip[];
   textTracks: TextTrack[];
   ratio: "portrait" | "landscape";
   templates?: any[];
