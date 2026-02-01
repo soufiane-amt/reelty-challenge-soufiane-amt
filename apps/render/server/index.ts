@@ -85,14 +85,14 @@ app.post("/render", async (req, res) => {
 
                     return {
                       ...clip,
-                      url: `http://localhost:3001/temp/${filename}`,
+                      url: `${process.env.NEXT_PUBLIC_RENDER_SERVER_URL}/temp/${filename}`,
                     };
                   }
                 }
               } else if (clip.url.startsWith("/")) {
                 return {
                   ...clip,
-                  url: `http://localhost:3001${clip.url}`,
+                  url: `${process.env.NEXT_PUBLIC_RENDER_SERVER_URL}${clip.url}`,
                 };
               }
             }
@@ -149,7 +149,7 @@ app.post("/render", async (req, res) => {
         renderJobs.set(id, {
           status: "done",
           progress: 1,
-          url: `http://localhost:3001/renders/${filename}`,
+          url: `${process.env.NEXT_PUBLIC_RENDER_SERVER_URL}/renders/${filename}`,
         });
       } catch (err) {
         console.error("Render background error:", err);

@@ -32,23 +32,26 @@ function RenderButton({
     setIsRendering(true);
     setProgress(0);
     try {
-      const response = await fetch("http://localhost:3001/render", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_RENDER_SERVER_URL}/render`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            clips,
+            texts: textTracks.map((t) => ({
+              content: t.content,
+              start: t.startPosition,
+              duration: t.duration,
+              animation: t.animation,
+            })),
+            ratio,
+            templates,
+          }),
         },
-        body: JSON.stringify({
-          clips,
-          texts: textTracks.map((t) => ({
-            content: t.content,
-            start: t.startPosition,
-            duration: t.duration,
-            animation: t.animation,
-          })),
-          ratio,
-          templates,
-        }),
-      });
+      );
 
       if (!response.ok) throw new Error("Render failed");
 
@@ -58,7 +61,7 @@ function RenderButton({
       // Poll for progress
       while (true) {
         const statusRes = await fetch(
-          `http://localhost:3001/progress/${jobId}`,
+          `${process.env.NEXT_PUBLIC_RENDER_SERVER_URL}/progress/${jobId}`,
         );
         if (!statusRes.ok) throw new Error("Failed to check progress");
 

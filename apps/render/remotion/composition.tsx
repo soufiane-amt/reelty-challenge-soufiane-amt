@@ -65,11 +65,7 @@ const TextLayer: React.FC<{ text: TextTrack; template: any }> = ({
             width: "80%",
           }}
         >
-          <Lottie
-            animationData={animationData}
-            loop
-            rendererSettings={{ preserveAspectRatio: "xMidYMin meet" }}
-          />
+          <Lottie animationData={animationData} loop />
         </div>
       ) : (
         <div
